@@ -1,14 +1,137 @@
 (in-package :cl-libheif/bindings)
 
+(defctype size-t :ulong)
+
+;;; heif_error.h
+
+;;; Enums
+(cffi:defcenum heif-error_code
+  (:ok 0)
+  (:input-does-not-exist 1)
+  (:invalid-input 2)
+  (:unsupported-filetype 3)
+  (:unsupported-feature 4)
+  (:usage-error 5)
+  (:memory-allocation-error 6)
+  (:decoder-plugin-error 7)
+  (:encoder-plugin-error 8)
+  (:encoding-error 9)
+  (:color-profile-does-not-exist 10)
+  (:plugin-loading-error 11)
+  (:canceled 12)
+  (:end-of-sequence 13))
+
+(cffi:defcenum heif_suberror_code
+  (:unspecified 0)
+  (:end-of-data 100)
+  (:invalid-box-size 101)
+  (:no-ftyp-box 102)
+  (:no-idat-box 103)
+  (:no-meta-box 104)
+  (:no-hdlr-box 105)
+  (:no-hvcc-box 106)
+  (:no-pitm-box 107)
+  (:no-ipco-box 108)
+  (:no-ipma-box 109)
+  (:no-iloc-box 110)
+  (:no-iinf-box 111)
+  (:no-iprp-box 112)
+  (:no-iref-box 113)
+  (:no-pict-handler 114)
+  (:ipma-references-nonexisting-property 115)
+  (:no-properties-assigned-to-item 116)
+  (:no-item-data 117)
+  (:invalid-grid-data 118)
+  (:missing-grid-images 119)
+  (:invalid-clean-aperture 120)
+  (:invalid-overlay-data 121)
+  (:overlay-outside-canvas 122)
+  (:auxiliary-image-type-unspecified 123)
+  (:no-or-invalid-primary-item 124)
+  (:no-infe-box 125)
+  (:unknown-color-profile-type 126)
+  (:wrong-tile-chroma-format 127)
+  (:invalid-fractional-number 128)
+  (:invalid-image-size 129)
+  (:invalid-pixi-box 130)
+  (:no-av1c-box 131)
+  (:wrong-tile-pixel-depth 132)
+  (:unknown-nclx-color-primaries 133)
+  (:unknown-nclx-transfer-characteristics 134)
+  (:unknown-nclx-matrix-coefficients 135)
+  (:invalid-region-data 136)
+  (:no-ispe-property 137)
+  (:camera-intrinsic-matrix-undefined 138)
+  (:camera-extrinsic-matrix-undefined 139)
+  (:invalid-j2k-codestream 140)
+  (:no-vvcc-box 141)
+  (:no-icbr-box 142)
+  (:no-avcc-box 143)
+  (:invalid-mini-box 149)
+  (:decompression-invalid-data 150)
+  (:no-moov-box 151)
+
+  ;; Memory allocation
+  (:security-limit-exceeded 1000)
+  (:compression-initialisation-error 1001)
+
+  ;; Usage
+  (:nonexisting-item-referenced 2000)
+  (:null-pointer-argument 2001)
+  (:nonexisting-image-channel-referenced 2002)
+  (:unsupported-plugin-version 2003)
+  (:unsupported-writer-version 2004)
+  (:unsupported-parameter 2005)
+  (:invalid-parameter-value 2006)
+  (:invalid-property 2007)
+  (:item-reference-cycle 2008)
+
+  ;; Unsupported feature
+  (:unsupported-codec 3000)
+  (:unsupported-image-type 3001)
+  (:unsupported-data-version 3002)
+  (:unsupported-color-conversion 3003)
+  (:unsupported-item-construction-method 3004)
+  (:unsupported-header-compression-method 3005)
+  (:unsupported-generic-compression-method 3006)
+  (:unsupported-essential-property 3007)
+
+  ;; Encoder plugin
+  (:unsupported-bit-depth 4000)
+
+  ;; Encoding error
+  (:cannot-write-output-data 5000)
+  (:encoder-initialization 5001)
+  (:encoder-encoding 5002)
+  (:encoder-cleanup 5003)
+  (:too-many-regions 5004)
+
+  ;; Plugin loading
+  (:plugin-loading-error 6000)
+  (:plugin-is-not-loaded 6001)
+  (:cannot-read-plugin-directory 6002)
+  (:no-matching-decoder-installed 6003))
+
+;;; Struct
+(cffi:defcstruct heif-error
+  (code heif-error_code)
+  (subcode heif_suberror_code)
+  (message :string))
+
+;;; Global success value (extern const)
+(cffi:defcvar ("heif_error_success" heif-error-success)
+    (:pointer (:struct heif-error)))
+
+(defun check-ret (err)
+  (assert (eql (getf err 'code) :ok)))
+(export 'check-ret)
+
+
+
 ;;; library.h
 
 (cffi:defcstruct heif_init_params
   (version :int))
-
-(cffi:defcstruct heif_error
-  (code :int)
-  (subcode :int)
-  (message :string))
 
 ;; ------------------------------------------------------------
 ;; Version Functions
@@ -320,7 +443,7 @@
   heif_color_profile_type (handle :pointer))
 
 (cffi:defcfun ("heif_image_handle_get_raw_color_profile_size" heif-image-handle-get-raw-color-profile-size)
-  :size_t (handle :pointer))
+  size-t (handle :pointer))
 
 (cffi:defcfun ("heif_image_handle_get_raw_color_profile" heif-image-handle-get-raw-color-profile)
   :pointer (handle :pointer) (out-data :pointer))
@@ -347,7 +470,7 @@
   heif_color_profile_type (image :pointer))
 
 (cffi:defcfun ("heif_image_get_raw_color_profile_size" heif-image-get-raw-color-profile-size)
-  :size_t (image :pointer))
+  size-t (image :pointer))
 
 (cffi:defcfun ("heif_image_get_raw_color_profile" heif-image-get-raw-color-profile)
   :pointer (image :pointer) (out-data :pointer))
@@ -359,7 +482,7 @@
   :pointer (image :pointer)
 	   (fourcc :string)
 	   (data :pointer)
-	   (size :size_t))
+	   (size size-t))
 
 (cffi:defcfun ("heif_image_set_nclx_color_profile" heif-image-set-nclx-color-profile)
   :pointer (image :pointer) (profile :pointer))
@@ -391,139 +514,18 @@
 (cffi:defcfun ("heif_mastering_display_colour_volume_decode" heif-mastering-display-colour-volume-decode)
   :pointer (in :pointer) (out :pointer))
 
-;;; heif_error.h
-
-(in-package :your-libheif-package)
-
-;;; Enums
-(cffi:defcenum heif_error_code
-  (:ok 0)
-  (:input-does-not-exist 1)
-  (:invalid-input 2)
-  (:unsupported-filetype 3)
-  (:unsupported-feature 4)
-  (:usage-error 5)
-  (:memory-allocation-error 6)
-  (:decoder-plugin-error 7)
-  (:encoder-plugin-error 8)
-  (:encoding-error 9)
-  (:color-profile-does-not-exist 10)
-  (:plugin-loading-error 11)
-  (:canceled 12)
-  (:end-of-sequence 13))
-
-(cffi:defcenum heif_suberror_code
-  (:unspecified 0)
-  (:end-of-data 100)
-  (:invalid-box-size 101)
-  (:no-ftyp-box 102)
-  (:no-idat-box 103)
-  (:no-meta-box 104)
-  (:no-hdlr-box 105)
-  (:no-hvcc-box 106)
-  (:no-pitm-box 107)
-  (:no-ipco-box 108)
-  (:no-ipma-box 109)
-  (:no-iloc-box 110)
-  (:no-iinf-box 111)
-  (:no-iprp-box 112)
-  (:no-iref-box 113)
-  (:no-pict-handler 114)
-  (:ipma-references-nonexisting-property 115)
-  (:no-properties-assigned-to-item 116)
-  (:no-item-data 117)
-  (:invalid-grid-data 118)
-  (:missing-grid-images 119)
-  (:invalid-clean-aperture 120)
-  (:invalid-overlay-data 121)
-  (:overlay-outside-canvas 122)
-  (:auxiliary-image-type-unspecified 123)
-  (:no-or-invalid-primary-item 124)
-  (:no-infe-box 125)
-  (:unknown-color-profile-type 126)
-  (:wrong-tile-chroma-format 127)
-  (:invalid-fractional-number 128)
-  (:invalid-image-size 129)
-  (:invalid-pixi-box 130)
-  (:no-av1c-box 131)
-  (:wrong-tile-pixel-depth 132)
-  (:unknown-nclx-color-primaries 133)
-  (:unknown-nclx-transfer-characteristics 134)
-  (:unknown-nclx-matrix-coefficients 135)
-  (:invalid-region-data 136)
-  (:no-ispe-property 137)
-  (:camera-intrinsic-matrix-undefined 138)
-  (:camera-extrinsic-matrix-undefined 139)
-  (:invalid-j2k-codestream 140)
-  (:no-vvcc-box 141)
-  (:no-icbr-box 142)
-  (:no-avcc-box 143)
-  (:invalid-mini-box 149)
-  (:decompression-invalid-data 150)
-  (:no-moov-box 151)
-
-  ;; Memory allocation
-  (:security-limit-exceeded 1000)
-  (:compression-initialisation-error 1001)
-
-  ;; Usage
-  (:nonexisting-item-referenced 2000)
-  (:null-pointer-argument 2001)
-  (:nonexisting-image-channel-referenced 2002)
-  (:unsupported-plugin-version 2003)
-  (:unsupported-writer-version 2004)
-  (:unsupported-parameter 2005)
-  (:invalid-parameter-value 2006)
-  (:invalid-property 2007)
-  (:item-reference-cycle 2008)
-
-  ;; Unsupported feature
-  (:unsupported-codec 3000)
-  (:unsupported-image-type 3001)
-  (:unsupported-data-version 3002)
-  (:unsupported-color-conversion 3003)
-  (:unsupported-item-construction-method 3004)
-  (:unsupported-header-compression-method 3005)
-  (:unsupported-generic-compression-method 3006)
-  (:unsupported-essential-property 3007)
-
-  ;; Encoder plugin
-  (:unsupported-bit-depth 4000)
-
-  ;; Encoding error
-  (:cannot-write-output-data 5000)
-  (:encoder-initialization 5001)
-  (:encoder-encoding 5002)
-  (:encoder-cleanup 5003)
-  (:too-many-regions 5004)
-
-  ;; Plugin loading
-  (:plugin-loading-error 6000)
-  (:plugin-is-not-loaded 6001)
-  (:cannot-read-plugin-directory 6002)
-  (:no-matching-decoder-installed 6003))
-
-;;; Struct
-(cffi:defcstruct heif_error
-  (code heif_error_code)
-  (subcode heif_suberror_code)
-  (message :string))
-
-;;; Global success value (extern const)
-(cffi:defcvar ("heif_error_success" heif-error-success)
-  (:pointer heif_error))
-
 
 ;;;;;;; heif_brands.h
 
 (defctype heif-brand2 :uint32)
 
-(defun heif-fourcc (a b c d)
-  "Convert four ASCII characters into a 32-bit unsigned int (heif_brand2)."
-  (logior (ash (char-code a) 24)
-	  (ash (char-code b) 16)
-	  (ash (char-code c) 8)
-	  (char-code d)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun heif-fourcc (a b c d)
+    "Convert four ASCII characters into a 32-bit unsigned int (heif_brand2)."
+    (logior (ash (char-code a) 24)
+	    (ash (char-code b) 16)
+	    (ash (char-code c) 8)
+	    (char-code d))))
 
 (defconstant +heif-brand2-heic+ (heif-fourcc #\h #\e #\i #\c))
 (defconstant +heif-brand2-heix+ (heif-fourcc #\h #\e #\i #\x))
@@ -562,11 +564,6 @@
   (:heif_filetype_yes_unsupported 2)
   (:heif_filetype_maybe 3))
 
-(defcstruct heif_error
-  (code :int)
-  (subcode :int)
-  (message :string))
-
 (defcfun ("heif_read_main_brand" heif_read_main_brand)
   heif-brand2
   (data :pointer)
@@ -593,7 +590,7 @@
   (brand-fourcc :pointer))
 
 (defcfun ("heif_list_compatible_brands" heif_list_compatible_brands)
-  (:struct heif_error)
+  (:struct heif-error)
   (data :pointer)
   (len :int)
   (out-brands :pointer)
@@ -614,7 +611,7 @@
   (len :int))
 
 (defcfun ("heif_has_compatible_filetype" heif_has_compatible_filetype)
-  (:struct heif_error)
+  (:struct heif-error)
   (data :pointer)
   (len :int))
 
@@ -626,8 +623,6 @@
 
 ;;;; heif_metadata.h
 
-
-(in-package :libheif)
 
 (defcenum heif_metadata_compression
   (:off 0)
@@ -661,12 +656,12 @@
   (metadata-id :uint32))
 
 (defcfun ("heif_image_handle_get_metadata_size" heif-image-handle-get-metadata-size)
-    :size_t
+    size-t
   (handle :pointer)
   (metadata-id :uint32))
 
 (defcfun ("heif_image_handle_get_metadata" heif-image-handle-get-metadata)
-    (:struct heif_error)
+    (:struct heif-error)
   (handle :pointer)
   (metadata-id :uint32)
   (out-data :pointer))
@@ -678,21 +673,21 @@
 
 ;; Writing metadata
 (defcfun ("heif_context_add_exif_metadata" heif-context-add-exif-metadata)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (handle :pointer)
   (data :pointer)
   (size :int))
 
 (defcfun ("heif_context_add_XMP_metadata" heif-context-add-xmp-metadata)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (handle :pointer)
   (data :pointer)
   (size :int))
 
 (defcfun ("heif_context_add_XMP_metadata2" heif-context-add-xmp-metadata2)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (handle :pointer)
   (data :pointer)
@@ -700,7 +695,7 @@
   (compression heif_metadata_compression))
 
 (defcfun ("heif_context_add_generic_metadata" heif-context-add-generic-metadata)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (handle :pointer)
   (data :pointer)
@@ -709,7 +704,7 @@
   (content-type :string))
 
 (defcfun ("heif_context_add_generic_uri_metadata" heif-context-add-generic-uri-metadata)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (handle :pointer)
   (data :pointer)
@@ -776,7 +771,7 @@
   (count :int))
 
 (defcfun ("heif_image_handle_get_depth_image_handle" heif-image-handle-get-depth-image-handle)
-    (:struct heif_error)
+    (:struct heif-error)
   (handle :pointer)
   (depth-image-id :uint32)
   (out-depth-handle :pointer)) ; (heif_image_handle**)
@@ -806,13 +801,13 @@
   (count :int))
 
 (defcfun ("heif_image_handle_get_thumbnail" heif-image-handle-get-thumbnail)
-    (:struct heif_error)
+    (:struct heif-error)
   (main-image-handle :pointer)
   (thumbnail-id :uint32)
   (out-thumbnail-handle :pointer))
 
 (defcfun ("heif_context_encode_thumbnail" heif-context-encode-thumbnail)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (image :pointer)
   (master-image-handle :pointer)
@@ -822,7 +817,7 @@
   (out-thumb-image-handle :pointer))
 
 (defcfun ("heif_context_assign_thumbnail" heif-context-assign-thumbnail)
-    (:struct heif_error)
+    (:struct heif-error)
   (ctx :pointer)
   (master-image :pointer)
   (thumbnail-image :pointer))
@@ -844,7 +839,7 @@
   (count :int))
 
 (defcfun ("heif_image_handle_get_auxiliary_type" heif-image-handle-get-auxiliary-type)
-    (:struct heif_error)
+    (:struct heif-error)
   (handle :pointer)
   (out-type :pointer)) ; (const char**)
 
@@ -854,7 +849,7 @@
   (out-type :pointer))
 
 (defcfun ("heif_image_handle_get_auxiliary_image_handle" heif-image-handle-get-auxiliary-image-handle)
-    (:struct heif_error)
+    (:struct heif-error)
   (main-image-handle :pointer)
   (auxiliary-id :uint32)
   (out-auxiliary-handle :pointer))
@@ -932,7 +927,7 @@
   (ctx :pointer)) ;; const heif_context*
 
 (defcfun ("heif_context_set_security_limits" heif-context-set-security-limits)
-    :int ;; heif_error
+    :int ;; heif-error
   (ctx :pointer)
   (limits :pointer)) ;; const heif_security_limits*
 
@@ -943,8 +938,6 @@
 
 
 ;;;; heif_encoding.h
-
-(in-package :libheif)
 
 ;; ---- enums ----
 
@@ -1016,7 +1009,7 @@
   (desc :pointer))
 
 (defcfun ("heif_context_get_encoder" heif-context-get-encoder)
-    :int ;; heif_error
+    :int ;; heif-error
   (context :pointer)
   (desc :pointer)
   (out_encoder (:pointer))) ;; heif_encoder**
@@ -1081,7 +1074,7 @@
   (options :pointer))
 
 (defcfun ("heif_context_encode_image" heif-context-encode-image)
-    :int ;; heif_error
+    :int ;; heif-error
   (context :pointer)
   (image :pointer)
   (encoder :pointer)
@@ -1116,8 +1109,6 @@
 
 
 ;;; heif_decoding.h
-
-(in-package :libheif)
 
 ;; --- enums ---
 
@@ -1182,11 +1173,11 @@
   (desc :pointer))
 
 (defcfun ("heif_decode_image" heif-decode-image)
-    :int ;; heif_error
+    (:struct heif-error) ;; heif-error
   (in_handle :pointer) ;; const heif_image_handle*
   (out_img (:pointer)) ;; heif_image**
-  (colorspace :int) ;; enum heif_colorspace
-  (chroma :int) ;; enum heif_chroma
+  (colorspace heif_colorspace) ;; enum heif_colorspace
+  (chroma heif_chroma) ;; enum heif_chroma
   (options :pointer)) ;; const heif_decoding_options*
 
 ;;;;; heif_context.h
@@ -1212,10 +1203,7 @@
 (defcstruct heif_reader)
 
 ;; heif_item_id is uint32_t
-(define-foreign-type heif-item-id :uint32)
-
-;; heif_error is usually int or struct; define as int here for simplicity
-(define-foreign-type heif-error :int)
+(defctype heif-item-id :uint32)
 
 ;; heif_reading_options is opaque pointer (not defined here)
 (defcstruct heif_reading_options)
@@ -1223,7 +1211,7 @@
 ;; heif_writer struct with function pointer
 (defcstruct heif_writer
   (writer_api_version :int)
-  (write (:pointer)) ;; function pointer: heif_error (*write)(heif_context*, const void*, size_t, void*)
+  (write (:pointer)) ;; function pointer: heif-error (*write)(heif_context*, const void*, size_t, void*)
 )
 
 ;; --- functions ---
@@ -1236,27 +1224,27 @@
   (ctx :pointer))
 
 (defcfun ("heif_context_read_from_file" heif-context-read-from-file)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (filename :string)
   (reading_options :pointer)) ;; can be NULL
 
 (defcfun ("heif_context_read_from_memory" heif-context-read-from-memory)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (mem (:pointer))
-  (size :size-t)
+  (size size-t)
   (reading_options :pointer)) ;; deprecated, use without copy
 
 (defcfun ("heif_context_read_from_memory_without_copy" heif-context-read-from-memory-without-copy)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (mem (:pointer))
-  (size :size-t)
+  (size size-t)
   (reading_options :pointer))
 
 (defcfun ("heif_context_read_from_reader" heif-context-read-from-reader)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (reader (:pointer)) ;; heif_reader*
   (userdata :pointer)
@@ -1278,17 +1266,17 @@
   (count :int))
 
 (defcfun ("heif_context_get_primary_image_ID" heif-context-get-primary-image-ID)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (id_ptr (:pointer))) ;; heif_item_id*
 
 (defcfun ("heif_context_get_primary_image_handle" heif-context-get-primary-image-handle)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (out_handle (:pointer))) ;; heif_image_handle**
 
 (defcfun ("heif_context_get_image_handle" heif-context-get-image-handle)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (id heif-item-id)
   (out_handle (:pointer))) ;; heif_image_handle**
@@ -1299,12 +1287,12 @@
   (fd :int))
 
 (defcfun ("heif_context_write_to_file" heif-context-write-to-file)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (filename :string))
 
 (defcfun ("heif_context_write" heif-context-write)
-  heif-error
+  (:struct heif-error)
   (ctx :pointer)
   (writer (:pointer)) ;; heif_writer*
   (userdata :pointer))
@@ -1316,10 +1304,7 @@
 (defcstruct heif_image_handle) ;; opaque pointer
 
 ;; heif_item_id is uint32
-(define-foreign-type heif-item-id :uint32)
-
-;; heif_error is usually int or struct; use int for now
-(define-foreign-type heif-error :int)
+(defctype heif-item-id :uint32)
 
 ;; heif_context opaque pointer
 (defcstruct heif_context)
@@ -1371,12 +1356,12 @@
   :int
   (handle (:pointer)))
 
-;; heif_error heif_image_handle_get_preferred_decoding_colorspace(const heif_image_handle*,
+;; (:struct heif-error) heif_image_handle_get_preferred_decoding_colorspace(const heif_image_handle*,
 ;;                                                                enum heif_colorspace*,
 ;;                                                                enum heif_chroma*);
 ;; You need to define enums heif_colorspace and heif_chroma similarly, here assumed as int.
 (defcfun ("heif_image_handle_get_preferred_decoding_colorspace" heif-image-handle-get-preferred-decoding-colorspace)
-  heif-error
+  (:struct heif-error)
   (handle (:pointer))
   (out_colorspace (:pointer)) ;; enum heif_colorspace*
   (out_chroma (:pointer)))    ;; enum heif_chroma*
@@ -1415,14 +1400,11 @@
 (defcstruct heif_context)
 
 ;; heif_item_id is uint32
-(define-foreign-type heif-item-id :uint32)
-
-;; heif_error is int
-(define-foreign-type heif-error :int)
+(defctype heif-item-id :uint32)
 
 ;; heif_colorspace and heif_chroma enums - define as :int for now
-(define-foreign-type heif-colorspace :int)
-(define-foreign-type heif-chroma :int)
+(defctype heif-colorspace :int)
+(defctype heif-chroma :int)
 
 ;; Struct heif_image_tiling
 (defcstruct heif_image_tiling
@@ -1436,39 +1418,39 @@
   (top_offset :uint32)
   (left_offset :uint32)
   (number_of_extra_dimensions :uint8)
-  (extra_dimension_size (* 8 :uint32))) ; array of 8 uint32
+  (extra_dimension_size (:array :uint32 8))) ; array of 8 uint32
 
 ;; --- functions ---
 
-;; heif_error heif_image_handle_get_image_tiling(const heif_image_handle* handle,
+;; (:struct heif-error) heif_image_handle_get_image_tiling(const heif_image_handle* handle,
 ;;                                              int process_image_transformations,
 ;;                                              struct heif_image_tiling* out_tiling);
 (defcfun ("heif_image_handle_get_image_tiling" heif-image-handle-get-image-tiling)
-  heif-error
+  (:struct heif-error)
   (handle (:pointer))
   (process_image_transformations :int)
   (out_tiling (:pointer))) ;; pointer to heif_image_tiling struct
 
-;; heif_error heif_image_handle_get_grid_image_tile_id(const heif_image_handle* handle,
+;; (:struct heif-error) heif_image_handle_get_grid_image_tile_id(const heif_image_handle* handle,
 ;;                                                     int process_image_transformations,
 ;;                                                     uint32_t tile_x, uint32_t tile_y,
 ;;                                                     heif_item_id* out_tile_item_id);
 (defcfun ("heif_image_handle_get_grid_image_tile_id" heif-image-handle-get-grid-image-tile-id)
-  heif-error
+  (:struct heif-error)
   (handle (:pointer))
   (process_image_transformations :int)
   (tile_x :uint32)
   (tile_y :uint32)
   (out_tile_item_id (:pointer))) ;; pointer to uint32
 
-;; heif_error heif_image_handle_decode_image_tile(const heif_image_handle* in_handle,
+;; (:struct heif-error) heif_image_handle_decode_image_tile(const heif_image_handle* in_handle,
 ;;                                                heif_image** out_img,
 ;;                                                enum heif_colorspace colorspace,
 ;;                                                enum heif_chroma chroma,
 ;;                                                const heif_decoding_options* options,
 ;;                                                uint32_t tile_x, uint32_t tile_y);
 (defcfun ("heif_image_handle_decode_image_tile" heif-image-handle-decode-image-tile)
-  heif-error
+  (:struct heif-error)
   (in_handle (:pointer))
   (out_img (:pointer)) ;; pointer to heif_image* (pointer to pointer)
   (colorspace heif-colorspace)
@@ -1477,7 +1459,7 @@
   (tile_x :uint32)
   (tile_y :uint32))
 
-;; heif_error heif_context_encode_grid(heif_context* ctx,
+;; (:struct heif-error) heif_context_encode_grid(heif_context* ctx,
 ;;                                     heif_image** tiles,
 ;;                                     uint16_t rows,
 ;;                                     uint16_t columns,
@@ -1485,7 +1467,7 @@
 ;;                                     const heif_encoding_options* input_options,
 ;;                                     heif_image_handle** out_image_handle);
 (defcfun ("heif_context_encode_grid" heif-context-encode-grid)
-  heif-error
+  (:struct heif-error)
   (ctx (:pointer))
   (tiles (:pointer)) ;; pointer to array of heif_image*
   (rows :uint16)
@@ -1494,7 +1476,7 @@
   (input_options (:pointer))
   (out_image_handle (:pointer))) ;; pointer to heif_image_handle*
 
-;; heif_error heif_context_add_grid_image(heif_context* ctx,
+;; (:struct heif-error) heif_context_add_grid_image(heif_context* ctx,
 ;;                                        uint32_t image_width,
 ;;                                        uint32_t image_height,
 ;;                                        uint32_t tile_columns,
@@ -1502,7 +1484,7 @@
 ;;                                        const heif_encoding_options* encoding_options,
 ;;                                        heif_image_handle** out_grid_image_handle);
 (defcfun ("heif_context_add_grid_image" heif-context-add-grid-image)
-  heif-error
+  (:struct heif-error)
   (ctx (:pointer))
   (image_width :uint32)
   (image_height :uint32)
@@ -1511,13 +1493,13 @@
   (encoding_options (:pointer))
   (out_grid_image_handle (:pointer))) ;; pointer to heif_image_handle*
 
-;; heif_error heif_context_add_image_tile(heif_context* ctx,
+;; (:struct heif-error) heif_context_add_image_tile(heif_context* ctx,
 ;;                                        heif_image_handle* tiled_image,
 ;;                                        uint32_t tile_x, uint32_t tile_y,
 ;;                                        const heif_image* image,
 ;;                                        heif_encoder* encoder);
 (defcfun ("heif_context_add_image_tile" heif-context-add-image-tile)
-  heif-error
+  (:struct heif-error)
   (ctx (:pointer))
   (tiled_image (:pointer))
   (tile_x :uint32)
@@ -1525,3 +1507,11 @@
   (image (:pointer))
   (encoder (:pointer))
 )
+
+
+(eval-when (:load-toplevel :compile-toplevel :execute)
+  (let ((pkg (find-package "CL-LIBHEIF/BINDINGS")))
+    (do-symbols (sym pkg)
+      (let ((name (symbol-name sym)))
+	(when (uiop:string-prefix-p "HEIF" name)
+	  (export sym pkg))))))
