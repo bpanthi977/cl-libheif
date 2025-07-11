@@ -47,3 +47,11 @@
 	(b:heif-image-handle-release handle))
       (when img
 	(b:heif-image-release img)))))
+
+(defun register-opticl-handler ()
+  (let ((opticl-package (find-package "OPTICL")))
+    (unless opticl-package
+      (error "opticl package is not loaded."))
+    (let ((table (find-symbol "*IMAGE-FILE-READER-HASH-TABLE*" opticl-package)))
+      (loop for ext in '(:heif :heic :avif :hif :heics) do
+	(setf (gethash ext (symbol-value table)) #'read-image)))))
