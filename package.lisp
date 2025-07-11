@@ -6,4 +6,5 @@
 (defpackage #:cl-libheif
   (:use #:cl)
   (:local-nicknames (#:b #:cl-libheif/bindings))
-  (:export #:read-image))
+  (:export #:read-image
+	   #:register-opticl-handler))
