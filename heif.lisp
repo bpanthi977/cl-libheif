@@ -1,11 +1,11 @@
-;;;; cl-libheif.lisp
+;;;; heif.lisp
 
-(in-package #:cl-libheif)
+(in-package #:heif)
 
 (defun version ()
-  (values (b:heif-get-version-number-major)
-	  (b:heif-get-version-number-minor)
-	  (b:heif-get-version-number-maintenance)))
+  (values (ffi:get-version-number-major)
+	  (ffi:get-version-number-minor)
+	  (ffi:get-version-number-maintenance)))
 
 (defun read-image (path)
   (let (ctx
@@ -18,20 +18,20 @@
     (unwind-protect
 	 (progn
 	   ;; Create context
-	   (setf ctx (b:heif-context-alloc))
-	   (b:check-ret (b:heif-context-read-from-file ctx (namestring (truename path)) (cffi:null-pointer)))
+	   (setf ctx (ffi:context-alloc))
+	   (ffi:check-ret (ffi:context-read-from-file ctx (namestring (truename path)) (cffi:null-pointer)))
 	   ;; Get primary image handle
-	   (b:check-ret (b:heif-context-get-primary-image-handle ctx handle*))
+	   (ffi:check-ret (ffi:context-get-primary-image-handle ctx handle*))
 	   (setf handle (cffi:mem-ref handle* :pointer 0))
 	   ;; Decode image
-	   (b:check-ret (b:heif-decode-image handle img* :rgb :interleaved-rgb (cffi:null-pointer)))
+	   (ffi:check-ret (ffi:decode-image handle img* :rgb :interleaved-rgb (cffi:null-pointer)))
 	   (setf img (cffi:mem-ref img* :pointer 0))
 	   ;; Read image data into an array
-	   (let ((width (b:heif-image-get-width img :interleaved))
-		 (height (b:heif-image-get-height img :interleaved)))
+	   (let ((width (ffi:image-get-width img :interleaved))
+		 (height (ffi:image-get-height img :interleaved)))
 	     (setf image (make-array (list height width 3) :element-type '(unsigned-byte 8)))
 	     (cffi:with-foreign-object (stride* :int)
-	       (let ((data (b:heif-image-get-plane-readonly img :interleaved stride*))
+	       (let ((data (ffi:image-get-plane-readonly img :interleaved stride*))
 		     (stride (cffi:mem-ref stride* :int)))
 		 (loop for y from 0 below height do
 		       (loop for x from 0 below width
@@ -42,11 +42,11 @@
 		 image))))
 
       (when ctx
-	(b:heif-context-free ctx))
+	(ffi:context-free ctx))
       (when handle
-	(b:heif-image-handle-release handle))
+	(ffi:image-handle-release handle))
       (when img
-	(b:heif-image-release img)))))
+	(ffi:image-release img)))))
 
 (defun register-opticl-handler ()
   (let ((opticl-package (find-package "OPTICL")))

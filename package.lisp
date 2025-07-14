@@ -1,10 +1,10 @@
 ;;;; package.lisp
 
-(defpackage :cl-libheif/bindings
-  (:use :cl :cffi))
+(defpackage :heif/ffi
+  (:use :cffi))
 
-(defpackage #:cl-libheif
+(defpackage #:heif
   (:use #:cl)
-  (:local-nicknames (#:b #:cl-libheif/bindings))
+  (:local-nicknames (#:ffi #:heif/ffi))
   (:export #:read-image
 	   #:register-opticl-handler))

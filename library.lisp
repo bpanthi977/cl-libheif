@@ -1,4 +1,4 @@
-(in-package #:cl-libheif)
+(in-package #:heif)
 
 (cffi:define-foreign-library libheif
   (:darwin (:default "libheif"))
